@@ -63,24 +63,24 @@ public class Player {
         int thisStatesScore = 0;
         // Sum all points for rows
         for(int row = 0; row<GameState.BOARD_SIZE; row++){
-            thisStatesScore += myMarks(row,row,0,GameState.BOARD_SIZE,player);
+            thisStatesScore += myMarks(state, row,row,0,GameState.BOARD_SIZE,player);
         }
         // sum all points for columns
         for(int col = 0; col<GameState.BOARD_SIZE; col++){
-            thisStatesScore += myMarks(0,GameState.BOARD_SIZE,col,col,player);
+            thisStatesScore += myMarks(state, 0,GameState.BOARD_SIZE,col,col,player);
         }
         // sum all points for the two diagonal lines
-        thisStatesScore += myMarks(0,GameState.BOARD_SIZE-1,GameState.BOARD_SIZE-1,0,player);
-        thisStatesScore += myMarks(0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,player);
+        thisStatesScore += myMarks(state, 0,GameState.BOARD_SIZE-1,GameState.BOARD_SIZE-1,0,player);
+        thisStatesScore += myMarks(state, 0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,player);
         return thisStatesScore;
     }
 
-    public int myMarks(int row, int row2, int col, int col2, int player){
+    public int myMarks(GameState state, int row, int row2, int col, int col2, int player){
         int dRow = (row2-row) / (GameState.BOARD_SIZE - 1);
         int dCol = (col2-col) / (GameState.BOARD_SIZE - 1);
         int playerScore = 0;
         for (int i = 0; i < GameState.BOARD_SIZE; ++i) {
-            if (GameState.cells[GameState.rowColumnToCell(row + i*dRow,col+i*dCol)] == player) {
+            if (state.at(row + i*dRow,col+i*dCol) == player) {
                 playerScore += 1; 
             }
         }
