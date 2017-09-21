@@ -28,9 +28,35 @@ public class Player {
         return nextStates.elementAt(random.nextInt(nextStates.size()));
     }   
     
-    public int alphaBeta(GameState state, int depth, int alpha, int beta, int player){
+    public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
+        Vector<GameState> nextStates = new Vector<GameState>();
+        gameState.findPossibleMoves(nextStates);
+        int v;
 
-        return 1;
+        if (depth==0 || nextStates.isEmpty()){
+            v = evaluationFunction(gameState,player);
+        } else if (player==Constants.CELL_X){
+            v = Integer.MIN_VALUE;
+            for (GameState g: nextStates){
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_O));
+                alpha = Math.max(alpha,v);
+                if (beta <= alpha){
+                    break;
+                }
+            }
+        } else {
+            v = Integer.MAX_VALUE;
+            for (GameState g: nextStates){
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_X));
+                alpha = Math.min(alpha,v);
+                if (beta <= alpha){
+                    break;
+                }
+            }
+
+        }
+        return v;
+
     }
 
     public int evaluationFunction(GameState state, int player){
@@ -44,17 +70,17 @@ public class Player {
             thisStatesScore += myMarks(0,GameState.BOARD_SIZE,col,col,player);
         }
         // sum all points for the two diagonal lines
-        thisStatesScore += myMarks(0,BOARD_SIZE-1,BOARD_SIZE-1,0,player);
+        thisStatesScore += myMarks(0,GameState.BOARD_SIZE-1,GameState.BOARD_SIZE-1,0,player);
         thisStatesScore += myMarks(0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,player);
         return thisStatesScore;
     }
 
     public int myMarks(int row, int row2, int col, int col2, int player){
-        int dRow = (row2-row) / (BOARD_SIZE - 1);
-        int dCol = (col2-col) / (BOARD_SIZE - 1);
+        int dRow = (row2-row) / (GameState.BOARD_SIZE - 1);
+        int dCol = (col2-col) / (GameState.BOARD_SIZE - 1);
         int playerScore = 0;
-        for (int i = 0; i < BOARD_SIZE; ++i) {
-            if (cells[rowColumnToCell(row + i*dRow,col+i*dCol)] == player) {
+        for (int i = 0; i < GameState.BOARD_SIZE; ++i) {
+            if (GameState.cells[GameState.rowColumnToCell(row + i*dRow,col+i*dCol)] == player) {
                 playerScore += 1; 
             }
         }
