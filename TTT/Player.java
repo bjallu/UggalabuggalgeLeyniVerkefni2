@@ -2,6 +2,19 @@ import java.util.*;
 
 public class Player {
     /**
+     *
+     *
+     * GLOBALS
+     *
+     *
+     */
+
+    private final int MAX_DEPTH = 3;
+
+
+
+
+    /**
      * Performs a move
      *
      * @param gameState
@@ -24,10 +37,34 @@ public class Player {
          * the best next state. This skeleton returns a random move instead.
          */
 
-        Random random = new Random();
-        return nextStates.elementAt(random.nextInt(nextStates.size()));
-    }   
-    
+        //Random random = new Random();
+        //return nextStates.elementAt(random.nextInt(nextStates.size()));
+
+        Vector<Integer> s = new Vector<>();
+        for (GameState n:nextStates){
+            s.add(alphabeta(n));
+        }
+
+        return nextStates.elementAt(s.indexOf(Collections.max(s)));
+
+
+
+    }
+
+
+    /**
+     *
+     *
+     * FUNCTIONS OTHER THAN PLAY
+     *
+     *
+     */
+
+    public int alphabeta(GameState state){
+        return alphabeta(state,MAX_DEPTH,Integer.MIN_VALUE,Integer.MAX_VALUE,state.getNextPlayer());
+    }
+
+
     public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
@@ -60,6 +97,9 @@ public class Player {
     }
 
     public int evaluationFunction(GameState state, int player){
+        if (state.isXWin()){
+            return 1000;
+        }
         int thisStatesScore = 0;
         // Sum all points for rows
         for(int row = 0; row<GameState.BOARD_SIZE; row++){
@@ -72,6 +112,7 @@ public class Player {
         // sum all points for the two diagonal lines
         thisStatesScore += myMarks(state, 0,GameState.BOARD_SIZE-1,GameState.BOARD_SIZE-1,0,player);
         thisStatesScore += myMarks(state, 0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,player);
+        //System.err.println("!!!!!!!!!!! This states score !!!!!!!!   " + thisStatesScore );
         return thisStatesScore;
     }
 
