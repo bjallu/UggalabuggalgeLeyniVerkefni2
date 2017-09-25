@@ -10,6 +10,8 @@ public class Player {
      */
 
     private final int MAX_DEPTH = 3;
+    private final int[] Xweights = {0,1,10,100,1000};
+    private final int[] Oweights = {0,1,9,95,950};
 
 
 
@@ -60,8 +62,19 @@ public class Player {
      *
      */
 
-    public int alphabeta(GameState state){
-        return alphabeta(state,MAX_DEPTH,Integer.MIN_VALUE,Integer.MAX_VALUE,state.getNextPlayer());
+    public GameState alphabeta(GameState state){
+        int alpha = Integer.MIN_VALUE;
+        int beta = Integer.MAX_VALUE;
+        Vector<GameState> nextStates = new Vector<GameState>();
+        state.findPossibleMoves(nextStates);
+
+        Vector<Integer> s = new Vector<>();
+        for (GameState n:nextStates){
+            s.add(alphabeta(n,MAX_DEPTH-1,alpha,beta,state.getNextPlayer()));
+        }
+
+        return nextStates.elementAt(s.indexOf(Collections.max(s)));
+
     }
 
 
@@ -98,7 +111,11 @@ public class Player {
 
     public int evaluationFunction(GameState state, int player){
         if (state.isXWin()){
-            return 1000;
+            return 10000;
+        } else if (state.isOWin()){
+            return -10000;
+        } else if (state.isEOG()){
+            return 0;
         }
         int thisStatesScore = 0;
         // Sum all points for rows
@@ -116,7 +133,7 @@ public class Player {
         return thisStatesScore;
     }
 
-    public int myMarks(GameState state, int row, int row2, int col, int col2, int player){
+    /*public int myMarks(GameState state, int row, int row2, int col, int col2, int player){
         int dRow = (row2-row) / (GameState.BOARD_SIZE - 1);
         int dCol = (col2-col) / (GameState.BOARD_SIZE - 1);
         int playerScore = 0;
@@ -127,6 +144,81 @@ public class Player {
         }
         return playerScore;
     }
+    */
+
+    /*
+    public int myMarks(GameState state, int row, int row2, int col, int col2, int player){
+        int inARow = 0;
+        int dRow = (row2-row) / (GameState.BOARD_SIZE - 1);
+        int dCol = (col2-col) / (GameState.BOARD_SIZE - 1);
+        if (state.at(row,col)==player) inARow++;
+        for (int i = 1; i < GameState.BOARD_SIZE; ++i) {
+            if (state.at(row + i*dRow,col+i*dCol) == player &&
+                    state.at(row + i*dRow,col+i*dCol) == state.at(row + (i-1)*dRow,col+(i-1)*dCol) ) {
+                inARow++;
+            } else if (state.at(row + i*dRow,col+i*dCol) != player &&
+                    state.at(row + i*dRow,col+i*dCol) != Constants.CELL_EMPTY){
+                inARow = 0;
+                break;
+            } else if (state.at(row + i*dRow,col+i*dCol) == player &&
+                    inARow > 0 &&
+                    state.at(row + i*dRow,col+i*dCol) != state.at(row + (i-1)*dRow,col+(i-1)*dCol)){
+                inARow = Math.max(inARow,1);
+            }
+        }
+        return inARow;
+    }
+
+    */
 
 
+    public int myMarks(GameState state, int row, int row2, int col, int col2, int player) {
+        int XinARow = 0;
+        int OinARow = 0;
+        int maxX = 0;
+        int maxO = 0;
+        int emptySpaces = 0;
+        int dRow = (row2 - row) / (GameState.BOARD_SIZE - 1);
+        int dCol = (col2 - col) / (GameState.BOARD_SIZE - 1);
+        int oldPiece = state.at(row, col);
+        if (oldPiece == Constants.CELL_X) {
+            XinARow++;
+        } else if (oldPiece == Constants.CELL_O) {
+            OinARow++;
+        } else {
+            emptySpaces++;
+        }
+        for (int i = 1; i < GameState.BOARD_SIZE; i++) {
+            int piece = state.at(row + i * dRow, col + i * dCol);
+            if (piece == oldPiece) {
+                if (piece == Constants.CELL_X) {
+                    XinARow++;
+                } else if (piece == Constants.CELL_O) {
+                    OinARow++;
+                } else {
+                    emptySpaces++;
+                }
+            } else if (piece != oldPiece) {
+                maxX = Math.max(XinARow, maxX);
+                maxO = Math.max(OinARow, maxO);
+                XinARow = 0;
+                OinARow = 0;
+                if (piece == Constants.CELL_EMPTY) {
+                    emptySpaces++;
+                } else if (piece == Constants.CELL_X) {
+                    XinARow++;
+                } else {
+                    OinARow++;
+                }
+            }
+            oldPiece = piece;
+        }
+        if (emptySpaces == 0) {
+            return 0;
+        } else if (maxO*maxX == 0){
+            return Xweights[maxX] - Oweights[maxO];
+        } else {
+            return 0;
+        }
+    }
 }
