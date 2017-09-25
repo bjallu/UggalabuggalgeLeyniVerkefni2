@@ -42,12 +42,15 @@ public class Player {
         //Random random = new Random();
         //return nextStates.elementAt(random.nextInt(nextStates.size()));
 
+        /*
         Vector<Integer> s = new Vector<>();
         for (GameState n:nextStates){
             s.add(alphabeta(n));
         }
+        */
 
-        return nextStates.elementAt(s.indexOf(Collections.max(s)));
+        //return nextStates.elementAt(s.indexOf(Collections.max(s)));
+        return alphabeta(gameState);
 
 
 
@@ -62,15 +65,39 @@ public class Player {
      *
      */
 
-    public GameState alphabeta(GameState state){
+    public GameState alphabeta(GameState gameState){
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
-        Vector<GameState> nextStates = new Vector<GameState>();
-        state.findPossibleMoves(nextStates);
-
+        int depth = MAX_DEPTH;
+        int player = gameState.getNextPlayer();
         Vector<Integer> s = new Vector<>();
-        for (GameState n:nextStates){
-            s.add(alphabeta(n,MAX_DEPTH-1,alpha,beta,state.getNextPlayer()));
+        Vector<GameState> nextStates = new Vector<GameState>();
+        gameState.findPossibleMoves(nextStates);
+        int v;
+
+        if (depth==0 || nextStates.isEmpty()){
+            v = evaluationFunction(gameState,player);
+        } else if (player==Constants.CELL_X){
+            v = Integer.MIN_VALUE;
+            for (GameState g: nextStates){
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_O));
+                alpha = Math.max(alpha,v);
+                s.add(v);
+                if (beta <= alpha){
+                    break;
+                }
+            }
+        } else {
+            v = Integer.MAX_VALUE;
+            for (GameState g: nextStates){
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_X));
+                alpha = Math.min(alpha,v);
+                s.add(v);
+                if (beta <= alpha){
+                    break;
+                }
+            }
+
         }
 
         return nextStates.elementAt(s.indexOf(Collections.max(s)));
@@ -111,9 +138,9 @@ public class Player {
 
     public int evaluationFunction(GameState state, int player){
         if (state.isXWin()){
-            return 10000;
+            return 1000;
         } else if (state.isOWin()){
-            return -10000;
+            return -1000;
         } else if (state.isEOG()){
             return 0;
         }
