@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Player {
     /**
@@ -9,7 +10,7 @@ public class Player {
      *
      */
 
-    private final int MAX_DEPTH = 3;
+    private final int MAX_DEPTH = 6;
     private final int[] Xweights = {0,1,10,100,1000};
     private final int[] Oweights = {0,1,9,95,950};
 
@@ -65,6 +66,38 @@ public class Player {
      *
      */
 
+    public class M{
+        public GameState gameState;
+        public Integer eval;
+
+        public M(GameState gameState, int eval){
+            this.eval = eval;
+            this.gameState = gameState;
+        }
+
+        public Integer getEval(){
+            return this.eval;
+        }
+
+        public GameState getGameState() {
+            return gameState;
+        }
+    }
+
+    public Vector<GameState> evalSort(Vector<GameState> states){
+        Vector<M> mStates = new Vector<>();
+
+        for (GameState g:states){
+            mStates.add(new M(g,evaluationFunction(g,g.getNextPlayer())));
+        }
+        mStates.sort(Comparator.comparing(M::getEval));
+
+        return new Vector<GameState>(mStates.stream().map(M::getGameState).collect(Collectors.toList()));
+
+    }
+
+
+
     public GameState alphabeta(GameState gameState){
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
@@ -73,6 +106,7 @@ public class Player {
         Vector<Integer> s = new Vector<>();
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
+        nextStates = evalSort(nextStates);
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
@@ -91,7 +125,7 @@ public class Player {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
                 v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_X));
-                alpha = Math.min(alpha,v);
+                beta = Math.min(beta,v);
                 s.add(v);
                 if (beta <= alpha){
                     break;
@@ -108,6 +142,9 @@ public class Player {
     public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
+        if (depth>0) {
+            nextStates = evalSort(nextStates);
+        }
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
@@ -125,7 +162,7 @@ public class Player {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
                 v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_X));
-                alpha = Math.min(alpha,v);
+                beta = Math.min(beta,v);
                 if (beta <= alpha){
                     break;
                 }
