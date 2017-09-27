@@ -10,7 +10,7 @@ public class Player {
 	 * 
 	 */
 	
-    private final int MAX_DEPTH = 2;
+    private final int MAX_DEPTH = 1;
 	
     /**
      * Performs a move
@@ -71,9 +71,9 @@ public class Player {
         Vector<M> mStates = new Vector<>();
         
         for (GameState g:states){
-            mStates.add(new M(g,evaluationFunction(g,g.getNextPlayer())));
+            mStates.add(new M(g,evaluationFunction(g,Constants.CELL_X)));
         }
-        mStates.sort(Comparator.comparing(M::getEval));
+        mStates.sort(Comparator.comparing(M::getEval).reversed());
 
         return new Vector<GameState>(mStates.stream().map(M::getGameState).collect(Collectors.toList()));
 
@@ -89,7 +89,7 @@ public class Player {
         Vector<Integer> s = new Vector<>();
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
-        nextStates = evalSort(nextStates);
+      //  nextStates = evalSort(nextStates);
         int v;
         
         if (depth==0 || nextStates.isEmpty()){
@@ -130,9 +130,11 @@ public class Player {
     public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
+        /*
         if (depth>0) {
         	nextStates = evalSort(nextStates);
         }
+        */
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
@@ -168,10 +170,18 @@ public class Player {
    public int evaluationFunction(GameState state, int player){
 	   
        int thisStatesScore = 0;
-       
+       /*
        if(state.isXWin()) {
-    	   thisStatesScore += 100000000; 
+    	   return 1000000;
        }
+       
+       if(state.isOWin()) {
+    	   return 0;
+       }
+       */
+   //    if(state.isXWin()) {
+   // 	   thisStatesScore += 100000000; 
+     //  }
       
        
        
@@ -182,7 +192,7 @@ public class Player {
        // Layer = z
        // row = y
        // col = x
-       
+       /*
        
        // all layers out the z-axis 
        for(int layer = 0; layer<GameState.BOARD_SIZE; layer++) {
@@ -243,6 +253,52 @@ public class Player {
        // max x max y
        thisStatesScore += myMarks(state, GameState.BOARD_SIZE-1, 0, GameState.BOARD_SIZE-1,0,0,GameState.BOARD_SIZE-1,player);
        
+       
+       
+       
+       
+       */
+       
+       		for (int row = 0; row < GameState.BOARD_SIZE; ++row) {
+    	      for (int col = 0; col < GameState.BOARD_SIZE; ++col) {
+    	    	  thisStatesScore += myMarks(state,row,row,col,col,0,GameState.BOARD_SIZE-1,player);
+    	      }
+       		}
+    	    for (int row = 0; row < GameState.BOARD_SIZE; ++row) {
+    	      for (int layer = 0; layer < GameState.BOARD_SIZE; ++layer) {
+    	    	thisStatesScore += myMarks(state,row,row,0,GameState.BOARD_SIZE-1,layer,layer,player); 
+    	      }
+    	    }
+    	    for (int col = 0; col < GameState.BOARD_SIZE; ++col)
+    	      for (int layer = 0; layer < GameState.BOARD_SIZE; ++layer) {
+    	    	thisStatesScore += myMarks(state,0,GameState.BOARD_SIZE-1,col,col,layer,layer,player);
+    	      }
+
+    	    for (int row = 0; row < GameState.BOARD_SIZE; ++row) {
+    	    	thisStatesScore += myMarks(state,row,row,0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,player);
+    	    }
+    	    for (int col = 0; col < GameState.BOARD_SIZE; ++col) {
+    	      thisStatesScore += myMarks(state,0,GameState.BOARD_SIZE-1,col,col,0,GameState.BOARD_SIZE-1,player);
+    	    }
+    	    for (int layer = 0; layer < GameState.BOARD_SIZE; ++layer) {
+    	      thisStatesScore += myMarks(state,0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,layer,layer,player);
+    	    }
+
+    	    for (int row = 0; row < GameState.BOARD_SIZE; ++row) {
+    	      thisStatesScore += myMarks(state,row,row,0,GameState.BOARD_SIZE-1,GameState.BOARD_SIZE-1,0,player);
+    	    }
+    	    for (int col = 0; col < GameState.BOARD_SIZE; ++col) {
+    	      thisStatesScore += myMarks(state,0,GameState.BOARD_SIZE-1,col,col,GameState.BOARD_SIZE-1,0,player);	
+    	    }
+    	    for (int layer = 0; layer < GameState.BOARD_SIZE; ++layer) {
+    	      thisStatesScore += myMarks(state,0,GameState.BOARD_SIZE-1,GameState.BOARD_SIZE-1,0,layer,layer,player);	
+    	    }
+
+    	    thisStatesScore += myMarks(state,0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,player);
+    	    thisStatesScore += myMarks(state,0,GameState.BOARD_SIZE-1,GameState.BOARD_SIZE-1,0,0,GameState.BOARD_SIZE-1,player);
+    	    thisStatesScore += myMarks(state,GameState.BOARD_SIZE-1,0,0,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,player);
+    	    thisStatesScore += myMarks(state,GameState.BOARD_SIZE-1,0,GameState.BOARD_SIZE-1,0,0,GameState.BOARD_SIZE-1,player);
+              
        return thisStatesScore;
    }
    
@@ -259,26 +315,44 @@ public class Player {
        int sum = 0;
        int oldPiece = 0;
        for (int i = 0; i < GameState.BOARD_SIZE; i++) {
-           int piece = state.at(row + i * dRow, col + i * dCol, layer + i*dLayer);
+           int piece = state.at(row + dRow*i, col + dCol * i, layer + dLayer * i);
            if (piece == Constants.CELL_X) {
-                   XinARow++;
-                   if(oldPiece == piece) {
-                	   linkedCounter += 1;
-                   }
-                   oldPiece = piece;
-        	   sum += 10;
-           } 
+        	   XinARow++;
+           }
+           if(piece == Constants.CELL_O) {
+        	   OinARow ++;
+           }
+        	 //  sum += 1;
+         
+        //   if( oldPiece == Constants.CELL_O && piece == Constants.CELL_O) {
+        //	   return 0;
+         //  }
+          // oldPiece = piece;
        }
        
+       int power = XinARow - OinARow;
+       
+       return power;
+       
+  //     if(power<0) {
+   // 	   return -1*(int)Math.pow(10,Math.abs(power));
+     //  }   
+      // return (int)Math.pow(10,power);
+       
+       /*
+       if(XinARow>0) {
+    	   sum += 10;
+       }
        if(XinARow>1) {
-    	   sum += 50;
+    	   sum += 100;
        }
        if(XinARow>2) {
-    	   sum += 500;
+    	   sum += 1000;
        }
        if(XinARow>3) {
-    	   sum += 5000;
+    	   sum += 10000;
        }
+      
        if(linkedCounter>0) {
     	   sum += 500;
        }
@@ -291,7 +365,9 @@ public class Player {
        if(linkedCounter>3) {
     	   sum += 100000;
        }
-       return sum;
+       */
+      // return sum;
+       
    }
     
 }
