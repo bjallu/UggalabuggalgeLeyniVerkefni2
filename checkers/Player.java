@@ -22,8 +22,6 @@ public class Player {
 	private Hashtable<Integer, hashInfo> STATE_INFO = new Hashtable<>();
 
 
-
-
     /**
      * Performs a move
      *
@@ -93,7 +91,7 @@ public class Player {
         }
     }
     
-    public class hashInfo{
+    public class HashInfo{
     	
     	public GameState bestGameState;
     	public int evaluation;
@@ -101,11 +99,33 @@ public class Player {
     	public int beta;
     	public int depth;
     	
+    	public hashInfo() {}
+    	
     	public hashInfo(GameState state, int evaluation, int alpha, int beta, int depth) {
     		this.bestGameState = state;
     		this.evaluation = evaluation;
     		this.alpha = alpha;
     		this.beta = beta;
+    		this.depth = depth;
+    	}
+    	
+    	public void setBestGameState(GameState state) {
+    		this.bestGameState = sate;
+    	}
+    	
+    	public void setEvalaution(int evaluation) {
+    		this.evaluation = evaluation;
+    	}
+    	
+    	public void setAlpha(int alpha) {
+    		this.alpha = alpha;
+    	}
+    	
+    	public void setBeta(int beta) {
+    		this.beta = beta;
+    	}
+    	
+    	public void setDepth(int depth) {
     		this.depth = depth;
     	}
     	
@@ -162,6 +182,10 @@ public class Player {
                 v = Math.max(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_RED));
                 alpha = Math.max(alpha,v);
                 s.add(v);
+                int value = zhash(g);
+                HashInfo info = new HashInfo(g,v,alpha,beta,depth);
+                if(STATE_INFO.get(value)==null) STATE_INFO.put(value,info);
+                else break;
                 if (beta <= alpha){
                     break;
                 }
