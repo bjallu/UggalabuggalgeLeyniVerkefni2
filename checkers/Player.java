@@ -11,7 +11,7 @@ public class Player {
      *
      */
 
-    private final int MAX_DEPTH = 8;
+    private final int MAX_DEPTH = 9;
     private final int MAN_VALUE = 5;
     private final int KING_VALUE = 15;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
@@ -87,11 +87,13 @@ public class Player {
 
     public Vector<GameState> evalSort(Vector<GameState> states){
         Vector<M> mStates = new Vector<>();
-
+        if (states.isEmpty()){return states;}
         for (GameState g:states){
             mStates.add(new M(g,evaluationFunction(g)));
         }
-        mStates.sort(Comparator.comparing(M::getEval));
+        int player = states.firstElement().getNextPlayer();
+        if (player == Constants.CELL_WHITE) mStates.sort(Comparator.comparing(M::getEval).reversed());
+        else mStates.sort(Comparator.comparing(M::getEval));
 
         return new Vector<GameState>(mStates.stream().map(M::getGameState).collect(Collectors.toList()));
 
@@ -112,10 +114,10 @@ public class Player {
 
         if (depth==0 || nextStates.isEmpty()){
             v = evaluationFunction(gameState);
-        } else if (player==Constants.CELL_RED){
+        } else if (player==Constants.CELL_WHITE){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_WHITE));
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_RED));
                 alpha = Math.max(alpha,v);
                 s.add(v);
                 if (beta <= alpha){
@@ -125,7 +127,7 @@ public class Player {
         } else {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_RED));
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_WHITE));
                 beta = Math.min(beta,v);
                 s.add(v);
                 if (beta <= alpha){
@@ -151,10 +153,10 @@ public class Player {
 
         if (depth==0 || nextStates.isEmpty()){
             v = evaluationFunction(gameState);
-        } else if (player==Constants.CELL_RED){
+        } else if (player==Constants.CELL_WHITE){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_WHITE));
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_RED));
                 alpha = Math.max(alpha,v);
                 if (beta <= alpha){
                     break;
@@ -163,7 +165,7 @@ public class Player {
         } else {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_RED));
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,Constants.CELL_WHITE));
                 beta = Math.min(beta,v);
                 if (beta <= alpha){
                     break;
@@ -178,12 +180,19 @@ public class Player {
     public int evaluationFunction(GameState gameState){
 
         int result = 0;
+        if (gameState.isWhiteWin()){
+            return 10000;
+        } else if (gameState.isRedWin()) {
+            return -10000;
+        } else if (gameState.isEOG()) {
+            return 0;
+        }
         for (int r = 0; r < BOARD_SIZE; r++){
             for (int c = 0; c < BOARD_SIZE/2; c++){
                 int cOffset = (r+1)%2;
                 int piece = gameState.get(r,cOffset+2*c);
                 int pieceVal = (piece & Constants.CELL_KING) == 4 ? KING_VALUE: MAN_VALUE;
-                if (piece == Constants.CELL_WHITE){
+                if ((piece & Constants.CELL_RED) == 1){
                     //result--;
                     result -= pieceVal+(BOARD_SIZE-r-1);
                 } else {
