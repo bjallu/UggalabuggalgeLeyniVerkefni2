@@ -18,6 +18,7 @@ public class Player {
     private static int[][] zobrist;
     private final int CHECKERS_STATES = 32;
 	private final int DIFFERENT_PLAYER_TYPES = 4; // 0 white pawn, 1 red pawn, 2 white king, 3 red king
+	private HashSet[] 
 
 
 
@@ -88,6 +89,40 @@ public class Player {
         public GameState getGameState() {
             return gameState;
         }
+    }
+    
+    public class hashInfo{
+    	
+    	public GameState bestGameState;
+    	public int evaluation;
+    	public int alpha;
+    	public int beta;
+    	public int depth;
+    	
+    	public hashInfo(GameState state, int evaluation, int alpha, int beta, int depth) {
+    		this.bestGameState = state;
+    		this.evaluation = evaluation;
+    		this.alpha = alpha;
+    		this.beta = beta;
+    		this.depth = depth;
+    	}
+    	
+    	public GameState getBestState() {
+    		return bestGameState;
+    	}  	
+    	public Integer getEvaluation() {
+    		return evaluation;
+    	}    	
+    	public Integer getAlpha() {
+    		return alpha;
+    	}   	
+    	public Integer getBeta() {
+    		return beta;
+    	}
+    	public Integer getDepth() {
+    		return depth;
+    	} 	
+    	
     }
 
     public Vector<GameState> evalSort(Vector<GameState> states){
