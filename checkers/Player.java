@@ -53,6 +53,8 @@ public class Player {
             s.add(alphabeta(n));
         }
         */
+        
+        init();
 
         //return nextStates.elementAt(s.indexOf(Collections.max(s)));
         return alphabeta(gameState);
