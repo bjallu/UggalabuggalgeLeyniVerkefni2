@@ -15,7 +15,7 @@ public class Player {
     private final int MAN_VALUE = 5;
     private final int KING_VALUE = 15;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
-    private static [][]int zobrist;
+    private static int[][] zobrist;
     private final int CHECKERS_STATES = 32;
 	private final int DIFFERENT_PLAYER_TYPES = 4; // 0 white pawn, 1 red pawn, 2 white king, 3 red king
 
@@ -212,16 +212,16 @@ public class Player {
 
     
     public void init() {
-    	zobrist = [CHECKERS_STATES][DIFFERENT_PLAYER_TYPES];
-    	for(int i = 0; i<checkersStates;i++) {
-    		for(int j = 0; j<differentTypesOfPLayers;j++) {
+    	zobrist = new int[CHECKERS_STATES][DIFFERENT_PLAYER_TYPES];
+    	for(int i = 0; i<CHECKERS_STATES;i++) {
+    		for(int j = 0; j<DIFFERENT_PLAYER_TYPES;j++) {
     			int randomNum = ThreadLocalRandom.current().randInt(0, Integer.MAX_VALUE);
     			zobrist[i][j] = randomNum;
     		}
     	}
     }
     
-    public void zhash(GameState state) {
+    public int zhash(GameState state) {
     	int val = 0;
     	boolean king = false;
     	for(int i = 0; i<CHECKERS_STATES; i++) {
@@ -233,7 +233,7 @@ public class Player {
 	    		if(piece==Constants.CELL_RED) p = 1;
 	    		if(piece == 0 && king == true) p = 2;
 	    		if(piece == 1 && king == true) p = 3;
-	    		val ^= zobrist[i][piece]		
+	    		val ^= zobrist[i][piece];
     		}  
 		}
     	return val;
