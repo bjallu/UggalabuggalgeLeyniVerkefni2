@@ -18,7 +18,7 @@ public class Player {
     private static int[][] zobrist;
     private final int CHECKERS_STATES = 32;
 	private final int DIFFERENT_PLAYER_TYPES = 4; // 0 white pawn, 1 red pawn, 2 white king, 3 red king
-	private HashSet[] 
+	private HashSet<hashInfo>() STATE_INFO = new HashSet<hashInfo>();
 
 
 
