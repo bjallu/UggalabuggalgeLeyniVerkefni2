@@ -15,7 +15,7 @@ public class Player {
 
     private int MAXER = Constants.CELL_WHITE;
     private int MINER = Constants.CELL_RED;
-    private final int MAX_DEPTH = 12;
+    private final int MAX_DEPTH = 5;
     private final int MAN_VALUE = 5;
     private final int KING_VALUE = 15;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
@@ -44,8 +44,6 @@ public class Player {
         }
         MAXER = gameState.getNextPlayer();
         MINER = nextStates.firstElement().getNextPlayer();
-        System.err.println(MAXER);
-        System.err.println(MINER);
         /**
          * Here you should write your algorithms to get the best next move, i.e.
          * the best next state. This skeleton returns a random move instead.
@@ -69,9 +67,10 @@ public class Player {
         //return alphabeta(gameState);
 
         GameState best = new GameState();
-        for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>50000000;d++){
-            best = alphabeta(gameState);
+        for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>250000000;d++){
+            best = alphabeta(gameState,d);
         }
+        System.err.println("DONE");
         return best;
 
 
@@ -176,15 +175,16 @@ public class Player {
         else mStates.sort(Comparator.comparing(M::getEval));
 
         return new Vector<GameState>(mStates.stream().map(M::getGameState).collect(Collectors.toList()));
+        //return states;
 
     }
 
 
 
-    public GameState alphabeta(GameState gameState){
+    public GameState alphabeta(GameState gameState, int d){
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
-        int depth = MAX_DEPTH;
+        int depth = d;
         int player = gameState.getNextPlayer();
         int z = zhash(gameState);
         HashInfo currStateInfo = STATE_INFO.get(z);
@@ -202,16 +202,13 @@ public class Player {
 
         if (depth==0 || nextStates.isEmpty()){
             v = evaluationFunction(gameState);
+            s.add(v);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER));
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,g.getNextPlayer()));
                 alpha = Math.max(alpha,v);
                 s.add(v);
-                int value = zhash(g);
-                HashInfo info = new HashInfo(g,v,alpha,beta,depth);
-                if(STATE_INFO.get(value)==null) STATE_INFO.put(value,info);
-                else break;
                 if (beta <= alpha){
                     break;
                 }
@@ -219,7 +216,7 @@ public class Player {
         } else {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER));
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,g.getNextPlayer()));
                 beta = Math.min(beta,v);
                 s.add(v);
                 if (beta <= alpha){
@@ -244,7 +241,7 @@ public class Player {
         }
         newHashInfo.setDepth(depth);
         newHashInfo.setEvalaution(v);
-
+        STATE_INFO.remove(z);
         STATE_INFO.put(z,newHashInfo);
 
         return nextStates.elementAt(s.indexOf(Collections.max(s)));
@@ -253,11 +250,14 @@ public class Player {
 
 
     public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
+        System.err.println(depth);
         int oldAlpha = alpha;
         int oldBeta = beta;
         int z = zhash(gameState);
         HashInfo currStateInfo = STATE_INFO.get(z);
         if (currStateInfo != null && currStateInfo.getDepth()>= depth) {
+            //System.err.println(currStateInfo.getAlpha() + " "+ beta);
+            //System.err.println(currStateInfo.getBeta() + " "+ alpha);
             if (currStateInfo.getAlpha()>=beta) return currStateInfo.getAlpha();
             if (currStateInfo.getBeta()<=alpha) return currStateInfo.getBeta();
             alpha = Math.max(alpha,currStateInfo.getAlpha());
@@ -265,7 +265,7 @@ public class Player {
         }
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
-        if (depth>=0) {
+        if (depth>0) {
             nextStates = evalSort(nextStates);
         }
         int v;
@@ -276,6 +276,7 @@ public class Player {
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
                 v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER));
+                if (depth==0) //System.err.println(v);
                 alpha = Math.max(alpha,v);
                 if (beta <= alpha){
                     break;
@@ -285,6 +286,7 @@ public class Player {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
                 v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER));
+                if (depth==0) //System.err.println(v);
                 beta = Math.min(beta,v);
                 if (beta <= alpha){
                     break;
@@ -309,6 +311,7 @@ public class Player {
         newHashInfo.setDepth(depth);
         newHashInfo.setEvalaution(v);
 
+        STATE_INFO.remove(z);
         STATE_INFO.put(z,newHashInfo);
 
         return v;
@@ -330,7 +333,7 @@ public class Player {
                 int cOffset = (r+1)%2;
                 int piece = gameState.get(r,cOffset+2*c);
                 int pieceVal = (piece & Constants.CELL_KING) == 4 ? KING_VALUE: MAN_VALUE;
-                if ((piece & MINER) == 1){
+                if ((piece & MINER) == MINER){
                     //result--;
                     result -= pieceVal+(BOARD_SIZE-r-1);
                 } else {
