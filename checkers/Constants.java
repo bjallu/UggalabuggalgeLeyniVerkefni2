@@ -37,12 +37,12 @@ public class Constants {
    */
   public static final String[] UNICODE_TEXT = {
       ". ", // CELL_EMPTY
-      "⛂ ", // CELL_RED
-      "⛀ ", // CELL_WHITE
+      "r ", // CELL_RED
+      "w ", // CELL_WHITE
       "? ", // Unused
       "? ", // Unused
-      "⛃ ", // CELL_RED | CELL_KING
-      "⛁ ", // CELL_WHITE | CELL_KING
+      "R ", // CELL_RED | CELL_KING
+      "W ", // CELL_WHITE | CELL_KING
       "? ", // Unused
       "  ", // CELL_INVALID
   };
@@ -52,15 +52,15 @@ public class Constants {
    * the Unicode character set with colors.
    */
   public static final String[] COLOR_TEXT = {
-      ". ", // CELL_EMPTY
-      "\u001B[31m⛂ \u001B[0m", // CELL_RED
-      "⛀ ", // CELL_WHITE
-      "? ", // Unused
-      "? ", // Unused
-      "\u001B[31m⛃ \u001B[0m", // CELL_RED | CELL_KING
-      "⛁ ", // CELL_WHITE | CELL_KING
-      "? ", // Unused
-      "  ", // CELL_INVALID
+    ". ", // CELL_EMPTY
+    "r ", // CELL_RED
+    "w ", // CELL_WHITE
+    "? ", // Unused
+    "? ", // Unused
+    "R ", // CELL_RED | CELL_KING
+    "W ", // CELL_WHITE | CELL_KING
+    "? ", // Unused
+    "  ", // CELL_INVALID
   };
 
   /**

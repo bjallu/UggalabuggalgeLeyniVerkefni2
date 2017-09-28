@@ -13,8 +13,8 @@ public class Player {
      *
      */
 
-    private int MAXER = Constants.CELL_WHITE;
-    private int MINER = Constants.CELL_RED;
+    public int MAXER;//Constants.CELL_WHITE;
+    public int MINER;//Constants.CELL_RED;
     private final int MAX_DEPTH = 5;
     private final int MAN_VALUE = 5;
     private final int KING_VALUE = 50;
@@ -66,6 +66,7 @@ public class Player {
 
         //return alphabeta(gameState);
 
+    	//public Vector<>
         GameState best = new GameState();
         for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>250000000;d++){
             //System.err.println(zhash(best));
@@ -164,13 +165,13 @@ public class Player {
     	
     }
 
-    public Vector<GameState> evalSort(Vector<GameState> states, int depth){
+    public Vector<GameState> evalSort(Vector<GameState> states, int depth, int player){
         Vector<M> mStates = new Vector<>();
         if (states.isEmpty()){return states;}
         for (GameState g:states){
-            mStates.add(new M(g,evaluationFunction(g,depth)));
+            mStates.add(new M(g,evaluationFunction(g,depth,player)));
         }
-        int player = states.firstElement().getNextPlayer();
+       // int player2 = states.firstElement().getNextPlayer();
         if (player == MAXER) mStates.sort(Comparator.comparing(M::getEval).reversed());
         else mStates.sort(Comparator.comparing(M::getEval));
 
@@ -185,7 +186,9 @@ public class Player {
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         int depth = d;
-        int player = gameState.getNextPlayer();
+        //int player = gameState.getNextPlayer();
+        int player = MAXER;
+        /*
         int z = zhash(gameState);
         HashInfo currStateInfo = STATE_INFO.get(z);
         if (currStateInfo != null && currStateInfo.getDepth()>= depth) {
@@ -194,19 +197,20 @@ public class Player {
         }
         int oldAlpha = alpha;
         int oldBeta = beta;
+        */
         Vector<Integer> s = new Vector<>();
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
-        nextStates = evalSort(nextStates,d);
+        nextStates = evalSort(nextStates,d,player);
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
-            v = evaluationFunction(gameState,depth);
+            v = evaluationFunction(gameState,depth,player);
             s.add(v);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,g.getNextPlayer()));
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER));
                 alpha = Math.max(alpha,v);
                 s.add(v);
                 if (beta <= alpha){
@@ -216,7 +220,7 @@ public class Player {
         } else {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,g.getNextPlayer()));
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER));
                 beta = Math.min(beta,v);
                 s.add(v);
                 if (beta <= alpha){
@@ -225,7 +229,7 @@ public class Player {
             }
 
         }
-
+/*
         if(d > 0 && !nextStates.isEmpty()) {
 		    HashInfo newHashInfo = new HashInfo();
 		    if (nextStates.isEmpty()) {
@@ -245,6 +249,7 @@ public class Player {
 		    STATE_INFO.remove(z);
 		    STATE_INFO.put(z,newHashInfo);
         }
+        */
         return nextStates.elementAt(s.indexOf(Collections.max(s)));
 
     }
@@ -253,6 +258,7 @@ public class Player {
     public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
         int oldAlpha = alpha;
         int oldBeta = beta;
+        /*
         int z = zhash(gameState);
         HashInfo currStateInfo = STATE_INFO.get(z);
         if (currStateInfo != null && currStateInfo.getDepth()>= depth) {
@@ -263,20 +269,21 @@ public class Player {
             alpha = Math.max(alpha,currStateInfo.getAlpha());
             beta = Math.min(beta,currStateInfo.getBeta());
         }
+        */
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
         if (depth>0) {
-            nextStates = evalSort(nextStates,depth);
+            nextStates = evalSort(nextStates,depth,player);
         }
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
-            v = evaluationFunction(gameState,depth);
+            v = evaluationFunction(gameState,depth,player);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
                 v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER));
-                if (depth==0) //System.err.println(v);
+                //if (depth==0) //System.err.println(v);
                 alpha = Math.max(alpha,v);
                 if (beta <= alpha){
                     break;
@@ -286,7 +293,7 @@ public class Player {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
                 v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER));
-                if (depth==0) //System.err.println(v);
+                //if (depth==0) //System.err.println(v);
                 beta = Math.min(beta,v);
                 if (beta <= alpha){
                     break;
@@ -294,7 +301,7 @@ public class Player {
             }
 
         }
-
+        /*
         if(depth > 0 && !nextStates.isEmpty()) {
 	        HashInfo newHashInfo = new HashInfo();
 	        if (nextStates.isEmpty()) {
@@ -315,20 +322,33 @@ public class Player {
 	        STATE_INFO.remove(z);
 	        STATE_INFO.put(z,newHashInfo);
         }
+        */
         return v;
 
     }
 
-    public int evaluationFunction(GameState gameState,int depth){
+    public int evaluationFunction(GameState gameState,int depth,int playOnPlayah){
     	//int tmpWinningDepth = WINNING_DEPTH;
         int result = 0;
+        /*
         if(MAXER == Constants.CELL_RED && gameState.isRedWin()){
             if(depth<WINNING_DEPTH){
-                WINNING_DEPTH = depth;
+            	if(playOnPlayah == MAXER) {
+            		WINNING_DEPTH = depth;
+            	}
                 return 10000;
             }
         }
-        if(depth<=WINNING_DEPTH){
+        if(MAXER == Constants.CELL_WHITE && gameState.isWhiteWin()){
+            if(depth<WINNING_DEPTH){
+            	if(playOnPlayah == MAXER) {
+            		WINNING_DEPTH = depth;
+            	}
+                return 10000;
+            }
+        }
+        */
+       // if(depth<=WINNING_DEPTH){
         /*
         if (MAXER == Constants.CELL_RED && gameState.isWhiteWin()){
             return -100000;
@@ -344,22 +364,33 @@ public class Player {
             return 0;
         }
         */
-        for (int r = 0; r < BOARD_SIZE; r++){
-            for (int c = 0; c < BOARD_SIZE/2; c++){
-                int cOffset = (r+1)%2;
-                int piece = gameState.get(r,cOffset+2*c);
-                int pieceVal = (piece & Constants.CELL_KING) == 4 ? KING_VALUE: MAN_VALUE;
-                if ((piece & MINER) != 0){
-                    //result--;
-                    result -= pieceVal+(BOARD_SIZE-r-1);
-                } else {
-                    //result++;
-                    result += pieceVal+r+1+checkIfProtected(gameState,r,cOffset+2*c,MAXER);
-                }
-
-            }
-        }
-        }
+	        for (int r = 0; r < BOARD_SIZE; r++){
+	            for (int c = 0; c < BOARD_SIZE/2; c++){
+	                int cOffset = (r+1)%2;
+	                int piece = gameState.get(r,cOffset+2*c);
+	              //  if(piece == Constants.CELL_EMPTY || piece == Constants.CELL_INVALID) continue;
+	                int pieceVal = (piece & Constants.CELL_KING) != 0 ? KING_VALUE: MAN_VALUE;
+	                if ((piece & MINER) != 0){
+	                    //result--;
+	                	if (pieceVal==KING_VALUE) {
+	                		result -= pieceVal;
+	                	}
+	                	else {
+	                		result -= pieceVal+(BOARD_SIZE-r-1);
+	                	}
+	                 } else {
+	                    //result++;
+	                	if (pieceVal==KING_VALUE) {
+	                		result += pieceVal;
+	                	}
+	                	else {
+	                		result += pieceVal+r+1+checkIfProtected(gameState,r,cOffset+2*c,MAXER);
+	                	}
+	                }
+	
+	            }
+	        }
+        //}
         return result;
 
     }
