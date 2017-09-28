@@ -198,17 +198,21 @@ public class Player {
         int depth = d;
         int player = gameState.getNextPlayer();
         int z = zhash(gameState);
+        int bestStateV = 0;
         HashInfo currStateInfo = STATE_INFO.get(z);
+        GameState bestNextState = new GameState();
+        Vector<GameState> nextStates = new Vector<GameState>();
+        gameState.findPossibleMoves(nextStates);
+        nextStates = evalSort(nextStates);
+        if(!nextStates.isEmpty()) bestNextState = nextStates.firstElement();
         if (currStateInfo != null && currStateInfo.getDepth()>= depth) {
             alpha = Math.max(alpha,currStateInfo.getAlpha());
             beta = Math.min(beta,currStateInfo.getBeta());
+            bestNextState = currStateInfo.getBestState();
         }
         int oldAlpha = alpha;
         int oldBeta = beta;
         Vector<Integer> s = new Vector<>();
-        Vector<GameState> nextStates = new Vector<GameState>();
-        gameState.findPossibleMoves(nextStates);
-        nextStates = evalSort(nextStates);
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
@@ -217,22 +221,33 @@ public class Player {
             s.add(v);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
-            for (GameState g: nextStates){
+            for (int i = -1;i<nextStates.size();i++){
                 if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER,due));
+                if (i==-1) {
+                    v = Math.max(v, alphabeta(bestNextState, depth - 1, alpha, beta, MINER, due));
+                    bestStateV = v;
+                } else {
+                    v = Math.max(v, alphabeta(nextStates.elementAt(i),depth-1,alpha,beta,MINER,due));
+                    s.add(v);
+                }
                 alpha = Math.max(alpha,v);
-                s.add(v);
                 if (beta <= alpha){
                     break;
                 }
             }
         } else {
             v = Integer.MAX_VALUE;
-            for (GameState g: nextStates){
+            for (int i = -1;i<nextStates.size();i++){
                 if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER,due));
+                if (i==-1){
+                    v = Math.min(v, alphabeta(bestNextState,depth-1,alpha,beta,MAXER,due));
+                    bestStateV = v;
+                }
+                else {
+                    v = Math.min(v, alphabeta(nextStates.elementAt(i),depth-1,alpha,beta,MAXER,due));
+                    s.add(v);
+                }
                 beta = Math.min(beta,v);
-                s.add(v);
                 if (beta <= alpha){
                     break;
                 }
@@ -244,8 +259,21 @@ public class Player {
             HashInfo newHashInfo = new HashInfo();
             if (nextStates.isEmpty()) {
                 newHashInfo.setBestGameState(null);
-            } else {
+            } else if(depth == 1){
                 newHashInfo.setBestGameState(nextStates.firstElement());
+            } else {
+                if (s.isEmpty()) newHashInfo.setBestGameState(bestNextState);
+                else if (player == MAXER) {
+                    if (bestStateV>=Collections.max(s))
+                        newHashInfo.setBestGameState(bestNextState);
+                    else
+                        newHashInfo.setBestGameState(nextStates.elementAt(s.indexOf(Collections.max(s))));
+                } else {
+                    if (bestStateV<=Collections.min(s))
+                        newHashInfo.setBestGameState(bestNextState);
+                    else
+                        newHashInfo.setBestGameState(nextStates.elementAt(s.indexOf(Collections.min(s))));
+                }
             }
             if (v<=oldAlpha) newHashInfo.setBeta(v);
             else if (v > oldAlpha && v < oldBeta) {
@@ -260,8 +288,8 @@ public class Player {
             STATE_INFO.put(z,newHashInfo);
         }
 
-        for (Integer si : s) System.err.println(d+" "+si);
-        return nextStates.elementAt(s.indexOf(Collections.max(s)));
+        return s.isEmpty() ? bestNextState : nextStates.elementAt(s.indexOf(Collections.max(s)));
+
 
     }
 
@@ -270,7 +298,14 @@ public class Player {
         int oldAlpha = alpha;
         int oldBeta = beta;
         int z = zhash(gameState);
+        int bestStateV = 0;
+        Vector<Integer> s = new Vector<>();
         HashInfo currStateInfo = STATE_INFO.get(z);
+        GameState bestNextState = new GameState();
+        Vector<GameState> nextStates = new Vector<GameState>();
+        gameState.findPossibleMoves(nextStates);
+        nextStates = evalSort(nextStates);
+        if(!nextStates.isEmpty()) bestNextState = nextStates.firstElement();
         if (currStateInfo != null && currStateInfo.getDepth()>= depth) {
             //System.err.println(currStateInfo.getAlpha() + " "+ beta);
             //System.err.println(currStateInfo.getBeta() + " "+ alpha);
@@ -278,22 +313,25 @@ public class Player {
             if (currStateInfo.getBeta()<=alpha && hasSeenBottom) return currStateInfo.getBeta();
             alpha = Math.max(alpha,currStateInfo.getAlpha());
             beta = Math.min(beta,currStateInfo.getBeta());
-        }
-        Vector<GameState> nextStates = new Vector<GameState>();
-        gameState.findPossibleMoves(nextStates);
-        if (depth>0) {
-            nextStates = evalSort(nextStates);
+            bestNextState = currStateInfo.bestGameState;
         }
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
             hasSeenBottom = true;
             v = evaluationFunction(gameState);
+            s.add(v);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
-            for (GameState g: nextStates){
+            for (int i = -1;i<nextStates.size();i++){
                 if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER,due));
+                if (i==-1) {
+                    v = Math.max(v, alphabeta(bestNextState, depth - 1, alpha, beta, MINER, due));
+                    bestStateV = v;
+                } else {
+                    v = Math.max(v, alphabeta(nextStates.elementAt(i),depth-1,alpha,beta,MINER,due));
+                    s.add(v);
+                }
                 alpha = Math.max(alpha,v);
                 if (beta <= alpha){
                     break;
@@ -301,9 +339,16 @@ public class Player {
             }
         } else {
             v = Integer.MAX_VALUE;
-            for (GameState g: nextStates){
+            for (int i = -1;i<nextStates.size();i++){
                 if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER,due));
+                if (i==-1){
+                    v = Math.min(v, alphabeta(bestNextState,depth-1,alpha,beta,MAXER,due));
+                    bestStateV = v;
+                }
+                else {
+                    v = Math.min(v, alphabeta(nextStates.elementAt(i),depth-1,alpha,beta,MAXER,due));
+                    s.add(v);
+                }
                 beta = Math.min(beta,v);
                 if (beta <= alpha){
                     break;
@@ -316,8 +361,21 @@ public class Player {
             HashInfo newHashInfo = new HashInfo();
             if (nextStates.isEmpty()) {
                 newHashInfo.setBestGameState(null);
-            } else {
+            } else if (depth == 1){
                 newHashInfo.setBestGameState(nextStates.firstElement());
+            } else {
+                if (s.isEmpty()) newHashInfo.setBestGameState(bestNextState);
+                else if (player == MAXER) {
+                    if (bestStateV>=Collections.max(s))
+                        newHashInfo.setBestGameState(bestNextState);
+                    else
+                        newHashInfo.setBestGameState(nextStates.elementAt(s.indexOf(Collections.max(s))));
+                } else {
+                    if (bestStateV<=Collections.min(s))
+                        newHashInfo.setBestGameState(bestNextState);
+                    else
+                        newHashInfo.setBestGameState(nextStates.elementAt(s.indexOf(Collections.min(s))));
+                }
             }
             if (v<=oldAlpha) newHashInfo.setBeta(v);
             else if (v > oldAlpha && v < oldBeta) {
@@ -383,23 +441,41 @@ public class Player {
     public int manhattan(int r1, int c1, int r2, int c2){
         return Math.abs(r1-r2)+Math.abs(c1-c2);
     }
-    /*
-    public int evaluationFunction(GameState gameState){
+
+    /*public int evaluationFunction(GameState gameState){
         int result = 0;
+        if (MAXER == Constants.CELL_WHITE && gameState.isWhiteWin()){
+            return 100000;
+        } else if (MAXER == Constants.CELL_RED && gameState.isRedWin()) {
+            return 100000;
+        } else if (gameState.isEOG() && !gameState.isRedWin() && !gameState.isWhiteWin()) {
+            return 0;
+        } else if (MINER == Constants.CELL_WHITE && gameState.isWhiteWin()){
+            return -100000;
+        } else if (MINER == Constants.CELL_RED && gameState.isRedWin()) {
+            return -100000;
+        }
+        int maxKings = 0;
+        int minKings = 0;
         for (int r = 0; r < BOARD_SIZE; r++){
             for (int c = 0; c < BOARD_SIZE/2; c++){
                 int cOffset = (r+1)%2;
                 int piece = gameState.get(r,cOffset+2*c);
+                if ((piece & Constants.CELL_KING) != 0){
+                    if ((piece & MAXER) != 0) maxKings++;
+                    else minKings++;
+                }
                 if (piece == Constants.CELL_INVALID || piece == Constants.CELL_EMPTY) continue;
                 for (int i = 0; i<CHECKERS_STATES;i++){
                     int compPiece = gameState.get(i);
-                    if ((piece & compPiece) == 0 || (piece & compPiece) == Constants.CELL_KING){
+                    if ((piece & compPiece) == 0){
                         result += manhattan(r,c,GameState.cellToRow(i),GameState.cellToCol(i));
                     }
                 }
 
             }
         }
+        if (maxKings>minKings)
 
 
         return result;
