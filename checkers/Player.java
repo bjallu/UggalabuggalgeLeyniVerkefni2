@@ -15,11 +15,11 @@ public class Player {
 
     private int MAXER = Constants.CELL_WHITE;
     private int MINER = Constants.CELL_RED;
-    private final int MAX_DEPTH = 5;
+    private final int MAX_DEPTH = 7;
     private final int MAN_VALUE = 5;
     private final int KING_VALUE = 15;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
-    private static int[][] zobrist = init();;
+    private static int[][] zobrist = init();
     private static final int CHECKERS_STATES = 32;
 	private static final int DIFFERENT_PLAYER_TYPES = 4; // 0 white pawn, 1 red pawn, 2 white king, 3 red king
 	private Hashtable<Integer, HashInfo> STATE_INFO = new Hashtable<>();
@@ -60,7 +60,6 @@ public class Player {
         */
         
 
-
         //return nextStates.elementAt(s.indexOf(Collections.max(s)));
 
 
@@ -68,12 +67,12 @@ public class Player {
 
         GameState best = new GameState();
         for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>250000000;d++){
+            System.err.println(zhash(best));
             best = alphabeta(gameState,d);
         }
-        System.err.println("DONE");
         return best;
 
-
+        //return alphabeta(gameState,MAX_DEPTH);
 
 
     }
@@ -250,7 +249,6 @@ public class Player {
 
 
     public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
-        System.err.println(depth);
         int oldAlpha = alpha;
         int oldBeta = beta;
         int z = zhash(gameState);
@@ -321,10 +319,10 @@ public class Player {
     public int evaluationFunction(GameState gameState){
 
         int result = 0;
-        if (gameState.isWhiteWin()){
-            return -10000;
-        } else if (gameState.isRedWin()) {
-            return 10000;
+        if (MAXER == Constants.CELL_RED && gameState.isWhiteWin()){
+            return -100000;
+        } else if (MAXER == Constants.CELL_RED && gameState.isRedWin()) {
+            return 100000;
         } else if (gameState.isEOG()) {
             return 0;
         }
@@ -333,18 +331,36 @@ public class Player {
                 int cOffset = (r+1)%2;
                 int piece = gameState.get(r,cOffset+2*c);
                 int pieceVal = (piece & Constants.CELL_KING) == 4 ? KING_VALUE: MAN_VALUE;
-                if ((piece & MINER) == MINER){
+                if ((piece & MINER) != 0){
                     //result--;
                     result -= pieceVal+(BOARD_SIZE-r-1);
                 } else {
                     //result++;
-                    result += pieceVal+r+1;
+                    result += pieceVal+r+1+checkIfProtected(gameState,r,cOffset+2*c,MAXER);
                 }
 
             }
         }
         return result;
 
+    }
+
+    public int checkIfProtected(GameState state, int r, int c, int player){
+        int result = 0;
+        if (r == 0 || r == 7 || c == 0 || c == 7){
+            return 2;
+        } else if (player == MAXER){
+            int left = state.get(r-1,c-1);
+            int right = state.get(r-1,c+1);
+            if ((left & MAXER) != 0){ result++;}
+            if ((right & MAXER) != 0){ result++;}
+        } else if (player == MINER){
+            int left = state.get(r+1,c-1);
+            int right = state.get(r+1,c+1);
+            if ((left & MINER) != 0){ result++;}
+            if ((right & MINER) != 0){ result++;}
+        }
+        return result;
     }
 
 
