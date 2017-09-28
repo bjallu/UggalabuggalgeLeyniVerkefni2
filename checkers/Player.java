@@ -23,6 +23,7 @@ public class Player {
     private static final int CHECKERS_STATES = 32;
 	private static final int DIFFERENT_PLAYER_TYPES = 4; // 0 white pawn, 1 red pawn, 2 white king, 3 red king
 	private Hashtable<Integer, HashInfo> STATE_INFO = new Hashtable<>();
+	public static int WINNING_DEPTH = Integer.MAX_VALUE;
 
 
     /**
@@ -163,11 +164,11 @@ public class Player {
     	
     }
 
-    public Vector<GameState> evalSort(Vector<GameState> states){
+    public Vector<GameState> evalSort(Vector<GameState> states, int depth){
         Vector<M> mStates = new Vector<>();
         if (states.isEmpty()){return states;}
         for (GameState g:states){
-            mStates.add(new M(g,evaluationFunction(g)));
+            mStates.add(new M(g,evaluationFunction(g,depth)));
         }
         int player = states.firstElement().getNextPlayer();
         if (player == MAXER) mStates.sort(Comparator.comparing(M::getEval).reversed());
@@ -196,11 +197,11 @@ public class Player {
         Vector<Integer> s = new Vector<>();
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
-        nextStates = evalSort(nextStates);
+        nextStates = evalSort(nextStates,d);
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
-            v = evaluationFunction(gameState);
+            v = evaluationFunction(gameState,depth);
             s.add(v);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
@@ -264,12 +265,12 @@ public class Player {
         Vector<GameState> nextStates = new Vector<GameState>();
         gameState.findPossibleMoves(nextStates);
         if (depth>0) {
-            nextStates = evalSort(nextStates);
+            nextStates = evalSort(nextStates,depth);
         }
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
-            v = evaluationFunction(gameState);
+            v = evaluationFunction(gameState,depth);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
@@ -316,13 +317,19 @@ public class Player {
 
     }
 
-    public int evaluationFunction(GameState gameState){
+    public int evaluationFunction(GameState gameState,int depth){
 
         int result = 0;
         if (MAXER == Constants.CELL_RED && gameState.isWhiteWin()){
             return -100000;
         } else if (MAXER == Constants.CELL_RED && gameState.isRedWin()) {
-            return 100000;
+        	if(depth<WINNING_DEPTH) {
+        		WINNING_DEPTH = depth;
+                return 100000;
+        	}
+        	else {
+        		return -10000;
+        	}
         } else if (gameState.isEOG()) {
             return 0;
         }
