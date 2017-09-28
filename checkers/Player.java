@@ -13,6 +13,7 @@ public class Player {
      *
      */
     private boolean isBetter = true;
+    private boolean hasSeenBottom = false;
     private int MAXER = Constants.CELL_WHITE;
     private int MINER = Constants.CELL_RED;
     private final long TIME_LIMIT = 50000000;
@@ -69,6 +70,7 @@ public class Player {
         GameState oldBest = new GameState();
         GameState best = new GameState();
         for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>50000000 ;d++){
+            hasSeenBottom = false;
             best = alphabeta(gameState,d,deadline);
             if (isBetter) oldBest = best;
             if(STATE_INFO.get(zhash(best)) != null) System.err.println(STATE_INFO.get(zhash(best)).getAlpha()+"   "+STATE_INFO.get(zhash(best)).getBeta());
