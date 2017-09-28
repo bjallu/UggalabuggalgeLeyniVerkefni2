@@ -17,9 +17,9 @@ public class Player {
     private int MAXER = Constants.CELL_WHITE;
     private int MINER = Constants.CELL_RED;
     private final long TIME_LIMIT = 50000000;
-    private final int MAX_DEPTH = 34;
+    private final int MAX_DEPTH = 15;
     private final int MAN_VALUE = 5;
-    private final int KING_VALUE = 15;
+    private final int KING_VALUE = 50;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
     private static int[][] zobrist = init();
     private static final int CHECKERS_STATES = 32;
@@ -67,6 +67,7 @@ public class Player {
 
         //return alphabeta(gameState);
         isBetter = true;
+
         GameState oldBest = new GameState();
         GameState best = new GameState();
         for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>50000000 ;d++){
@@ -211,6 +212,7 @@ public class Player {
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
+            hasSeenBottom = true;
             v = evaluationFunction(gameState);
             s.add(v);
         } else if (player==MAXER){
@@ -272,8 +274,8 @@ public class Player {
         if (currStateInfo != null && currStateInfo.getDepth()>= depth) {
             //System.err.println(currStateInfo.getAlpha() + " "+ beta);
             //System.err.println(currStateInfo.getBeta() + " "+ alpha);
-            if (currStateInfo.getAlpha()>=beta) return currStateInfo.getAlpha();
-            if (currStateInfo.getBeta()<=alpha) return currStateInfo.getBeta();
+            if (currStateInfo.getAlpha()>=beta && hasSeenBottom) return currStateInfo.getAlpha();
+            if (currStateInfo.getBeta()<=alpha && hasSeenBottom) return currStateInfo.getBeta();
             alpha = Math.max(alpha,currStateInfo.getAlpha());
             beta = Math.min(beta,currStateInfo.getBeta());
         }
@@ -285,6 +287,7 @@ public class Player {
         int v;
 
         if (depth==0 || nextStates.isEmpty()){
+            hasSeenBottom = true;
             v = evaluationFunction(gameState);
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
