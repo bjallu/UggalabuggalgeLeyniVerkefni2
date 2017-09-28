@@ -15,9 +15,9 @@ public class Player {
 
     private int MAXER = Constants.CELL_WHITE;
     private int MINER = Constants.CELL_RED;
-    private final int MAX_DEPTH = 7;
+    private final int MAX_DEPTH = 5;
     private final int MAN_VALUE = 5;
-    private final int KING_VALUE = 15;
+    private final int KING_VALUE = 50;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
     private static int[][] zobrist = init();
     private static final int CHECKERS_STATES = 32;
@@ -68,7 +68,7 @@ public class Player {
 
         GameState best = new GameState();
         for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>250000000;d++){
-            System.err.println(zhash(best));
+            //System.err.println(zhash(best));
             best = alphabeta(gameState,d);
         }
         return best;
@@ -226,24 +226,25 @@ public class Player {
 
         }
 
-        HashInfo newHashInfo = new HashInfo();
-        if (nextStates.isEmpty()) {
-            newHashInfo.setBestGameState(null);
-        } else {
-            newHashInfo.setBestGameState(nextStates.firstElement());
+        if(d > 0 && !nextStates.isEmpty()) {
+		    HashInfo newHashInfo = new HashInfo();
+		    if (nextStates.isEmpty()) {
+		        newHashInfo.setBestGameState(null);
+		    } else {
+		        newHashInfo.setBestGameState(nextStates.firstElement());
+		    }
+		    if (v<=oldAlpha) newHashInfo.setBeta(v);
+		    else if (v > oldAlpha && v < oldBeta) {
+		        newHashInfo.setAlpha(v);
+		        newHashInfo.setBeta(v);
+		    } else if (v >= oldBeta) {
+		        newHashInfo.setAlpha(v);
+		    }
+		    newHashInfo.setDepth(depth);
+		    newHashInfo.setEvalaution(v);
+		    STATE_INFO.remove(z);
+		    STATE_INFO.put(z,newHashInfo);
         }
-        if (v<=oldAlpha) newHashInfo.setBeta(v);
-        else if (v > oldAlpha && v < oldBeta) {
-            newHashInfo.setAlpha(v);
-            newHashInfo.setBeta(v);
-        } else if (v >= oldBeta) {
-            newHashInfo.setAlpha(v);
-        }
-        newHashInfo.setDepth(depth);
-        newHashInfo.setEvalaution(v);
-        STATE_INFO.remove(z);
-        STATE_INFO.put(z,newHashInfo);
-
         return nextStates.elementAt(s.indexOf(Collections.max(s)));
 
     }
@@ -294,45 +295,55 @@ public class Player {
 
         }
 
-        HashInfo newHashInfo = new HashInfo();
-        if (nextStates.isEmpty()) {
-            newHashInfo.setBestGameState(null);
-        } else {
-            newHashInfo.setBestGameState(nextStates.firstElement());
+        if(depth > 0 && !nextStates.isEmpty()) {
+	        HashInfo newHashInfo = new HashInfo();
+	        if (nextStates.isEmpty()) {
+	            newHashInfo.setBestGameState(null);
+	        } else {
+	            newHashInfo.setBestGameState(nextStates.firstElement());
+	        }
+	        if (v<=oldAlpha) newHashInfo.setBeta(v);
+	        else if (v > oldAlpha && v < oldBeta) {
+	            newHashInfo.setAlpha(v);
+	            newHashInfo.setBeta(v);
+	        } else if (v >= oldBeta) {
+	            newHashInfo.setAlpha(v);
+	        }
+	        newHashInfo.setDepth(depth);
+	        newHashInfo.setEvalaution(v);
+	
+	        STATE_INFO.remove(z);
+	        STATE_INFO.put(z,newHashInfo);
         }
-        if (v<=oldAlpha) newHashInfo.setBeta(v);
-        else if (v > oldAlpha && v < oldBeta) {
-            newHashInfo.setAlpha(v);
-            newHashInfo.setBeta(v);
-        } else if (v >= oldBeta) {
-            newHashInfo.setAlpha(v);
-        }
-        newHashInfo.setDepth(depth);
-        newHashInfo.setEvalaution(v);
-
-        STATE_INFO.remove(z);
-        STATE_INFO.put(z,newHashInfo);
-
         return v;
 
     }
 
     public int evaluationFunction(GameState gameState,int depth){
-
+    	//int tmpWinningDepth = WINNING_DEPTH;
         int result = 0;
+        if(MAXER == Constants.CELL_RED && gameState.isRedWin()){
+            if(depth<WINNING_DEPTH){
+                WINNING_DEPTH = depth;
+                return 10000;
+            }
+        }
+        if(depth<=WINNING_DEPTH){
+        /*
         if (MAXER == Constants.CELL_RED && gameState.isWhiteWin()){
             return -100000;
         } else if (MAXER == Constants.CELL_RED && gameState.isRedWin()) {
-        	if(depth<WINNING_DEPTH) {
-        		WINNING_DEPTH = depth;
+        	//if(depth<WINNING_DEPTH) {
+        	//	WINNING_DEPTH = depth;
                 return 100000;
-        	}
-        	else {
-        		return -10000;
-        	}
+        	//}
+        	//else {
+        	//	return -10000;
+        	//}
         } else if (gameState.isEOG()) {
             return 0;
         }
+        */
         for (int r = 0; r < BOARD_SIZE; r++){
             for (int c = 0; c < BOARD_SIZE/2; c++){
                 int cOffset = (r+1)%2;
@@ -347,6 +358,7 @@ public class Player {
                 }
 
             }
+        }
         }
         return result;
 
