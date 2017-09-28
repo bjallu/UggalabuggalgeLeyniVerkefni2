@@ -12,17 +12,18 @@ public class Player {
      *
      *
      */
-
+    private boolean isBetter = true;
     private int MAXER = Constants.CELL_WHITE;
     private int MINER = Constants.CELL_RED;
-    private final int MAX_DEPTH = 7;
+    private final long TIME_LIMIT = 50000000;
+    private final int MAX_DEPTH = 34;
     private final int MAN_VALUE = 5;
     private final int KING_VALUE = 15;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
     private static int[][] zobrist = init();
     private static final int CHECKERS_STATES = 32;
-	private static final int DIFFERENT_PLAYER_TYPES = 4; // 0 white pawn, 1 red pawn, 2 white king, 3 red king
-	private Hashtable<Integer, HashInfo> STATE_INFO = new Hashtable<>();
+    private static final int DIFFERENT_PLAYER_TYPES = 4; // 0 white pawn, 1 red pawn, 2 white king, 3 red king
+    private Hashtable<Integer, HashInfo> STATE_INFO = new Hashtable<>();
 
 
     /**
@@ -58,19 +59,23 @@ public class Player {
             s.add(alphabeta(n));
         }
         */
-        
+        STATE_INFO = new Hashtable<>();
 
         //return nextStates.elementAt(s.indexOf(Collections.max(s)));
 
 
         //return alphabeta(gameState);
-
+        isBetter = true;
+        GameState oldBest = new GameState();
         GameState best = new GameState();
-        for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>250000000;d++){
-            System.err.println(zhash(best));
-            best = alphabeta(gameState,d);
+        for (int d = 0; d<MAX_DEPTH && deadline.timeUntil()>50000000 ;d++){
+            best = alphabeta(gameState,d,deadline);
+            if (isBetter) oldBest = best;
+            if(STATE_INFO.get(zhash(best)) != null) System.err.println(STATE_INFO.get(zhash(best)).getAlpha()+"   "+STATE_INFO.get(zhash(best)).getBeta());
+            if(STATE_INFO.get(zhash(best)) != null && STATE_INFO.get(zhash(best)).getAlpha()==100000) break;
         }
-        return best;
+
+        return oldBest;
 
         //return alphabeta(gameState,MAX_DEPTH);
 
@@ -103,64 +108,68 @@ public class Player {
             return gameState;
         }
     }
-    
+
     public class HashInfo{
-    	
-    	public GameState bestGameState;
-    	public int evaluation;
-    	public int alpha;
-    	public int beta;
-    	public int depth;
-    	
-    	public HashInfo() {
-    	    this.alpha = Integer.MIN_VALUE;
-    	    this.beta = Integer.MAX_VALUE;
+
+        public GameState bestGameState;
+        public int evaluation;
+        public int alpha;
+        public int beta;
+        public int depth;
+
+        public HashInfo() {
+            this.alpha = Integer.MIN_VALUE;
+            this.beta = Integer.MAX_VALUE;
         }
-    	
-    	public HashInfo(GameState state, int evaluation, int alpha, int beta, int depth) {
-    		this.bestGameState = state;
-    		this.evaluation = evaluation;
-    		this.alpha = alpha;
-    		this.beta = beta;
-    		this.depth = depth;
-    	}
-    	
-    	public void setBestGameState(GameState state) {
-    		this.bestGameState = state;
-    	}
-    	
-    	public void setEvalaution(int evaluation) {
-    		this.evaluation = evaluation;
-    	}
-    	
-    	public void setAlpha(int alpha) {
-    		this.alpha = alpha;
-    	}
-    	
-    	public void setBeta(int beta) {
-    		this.beta = beta;
-    	}
-    	
-    	public void setDepth(int depth) {
-    		this.depth = depth;
-    	}
-    	
-    	public GameState getBestState() {
-    		return bestGameState;
-    	}  	
-    	public Integer getEvaluation() {
-    		return evaluation;
-    	}    	
-    	public Integer getAlpha() {
-    		return alpha;
-    	}   	
-    	public Integer getBeta() {
-    		return beta;
-    	}
-    	public Integer getDepth() {
-    		return depth;
-    	} 	
-    	
+
+        public HashInfo(GameState state, int evaluation, int alpha, int beta, int depth) {
+            this.bestGameState = state;
+            this.evaluation = evaluation;
+            this.alpha = alpha;
+            this.beta = beta;
+            this.depth = depth;
+        }
+
+        public void setBestGameState(GameState state) {
+            this.bestGameState = state;
+        }
+
+        public void setEvalaution(int evaluation) {
+            this.evaluation = evaluation;
+        }
+
+        public void setAlpha(int alpha) {
+            this.alpha = alpha;
+        }
+
+        public void setBeta(int beta) {
+            this.beta = beta;
+        }
+
+        public void setDepth(int depth) {
+            this.depth = depth;
+        }
+
+        public GameState getBestState() {
+            return bestGameState;
+        }
+        public Integer getEvaluation() {
+            return evaluation;
+        }
+        public Integer getAlpha() {
+            return alpha;
+        }
+        public Integer getBeta() {
+            return beta;
+        }
+        public Integer getDepth() {
+            return depth;
+        }
+
+
+        public String print() {
+            return "alpha: "+this.alpha+" beta: "+this.beta;
+        }
     }
 
     public Vector<GameState> evalSort(Vector<GameState> states){
@@ -170,7 +179,7 @@ public class Player {
             mStates.add(new M(g,evaluationFunction(g)));
         }
         int player = states.firstElement().getNextPlayer();
-        if (player == MAXER) mStates.sort(Comparator.comparing(M::getEval).reversed());
+        if (player == MINER) mStates.sort(Comparator.comparing(M::getEval).reversed());
         else mStates.sort(Comparator.comparing(M::getEval));
 
         return new Vector<GameState>(mStates.stream().map(M::getGameState).collect(Collectors.toList()));
@@ -180,7 +189,7 @@ public class Player {
 
 
 
-    public GameState alphabeta(GameState gameState, int d){
+    public GameState alphabeta(GameState gameState, int d, Deadline due){
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         int depth = d;
@@ -205,7 +214,8 @@ public class Player {
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,g.getNextPlayer()));
+                if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER,due));
                 alpha = Math.max(alpha,v);
                 s.add(v);
                 if (beta <= alpha){
@@ -215,7 +225,8 @@ public class Player {
         } else {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,g.getNextPlayer()));
+                if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER,due));
                 beta = Math.min(beta,v);
                 s.add(v);
                 if (beta <= alpha){
@@ -225,30 +236,33 @@ public class Player {
 
         }
 
-        HashInfo newHashInfo = new HashInfo();
-        if (nextStates.isEmpty()) {
-            newHashInfo.setBestGameState(null);
-        } else {
-            newHashInfo.setBestGameState(nextStates.firstElement());
+        if( depth>0 && !nextStates.isEmpty()){
+            HashInfo newHashInfo = new HashInfo();
+            if (nextStates.isEmpty()) {
+                newHashInfo.setBestGameState(null);
+            } else {
+                newHashInfo.setBestGameState(nextStates.firstElement());
+            }
+            if (v<=oldAlpha) newHashInfo.setBeta(v);
+            else if (v > oldAlpha && v < oldBeta) {
+                newHashInfo.setAlpha(v);
+                newHashInfo.setBeta(v);
+            } if (v >= oldBeta) {
+                newHashInfo.setAlpha(v);
+            }
+            newHashInfo.setDepth(depth);
+            newHashInfo.setEvalaution(v);
+            STATE_INFO.remove(z);
+            STATE_INFO.put(z,newHashInfo);
         }
-        if (v<=oldAlpha) newHashInfo.setBeta(v);
-        else if (v > oldAlpha && v < oldBeta) {
-            newHashInfo.setAlpha(v);
-            newHashInfo.setBeta(v);
-        } else if (v >= oldBeta) {
-            newHashInfo.setAlpha(v);
-        }
-        newHashInfo.setDepth(depth);
-        newHashInfo.setEvalaution(v);
-        STATE_INFO.remove(z);
-        STATE_INFO.put(z,newHashInfo);
 
+        for (Integer si : s) System.err.println(d+" "+si);
         return nextStates.elementAt(s.indexOf(Collections.max(s)));
 
     }
 
 
-    public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player){
+    public int alphabeta(GameState gameState, int depth, int alpha, int beta, int player, Deadline due){
         int oldAlpha = alpha;
         int oldBeta = beta;
         int z = zhash(gameState);
@@ -273,8 +287,8 @@ public class Player {
         } else if (player==MAXER){
             v = Integer.MIN_VALUE;
             for (GameState g: nextStates){
-                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER));
-                if (depth==0) //System.err.println(v);
+                if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
+                v = Math.max(v, alphabeta(g,depth-1,alpha,beta,MINER,due));
                 alpha = Math.max(alpha,v);
                 if (beta <= alpha){
                     break;
@@ -283,8 +297,8 @@ public class Player {
         } else {
             v = Integer.MAX_VALUE;
             for (GameState g: nextStates){
-                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER));
-                if (depth==0) //System.err.println(v);
+                if (due.timeUntil()<TIME_LIMIT) {isBetter=false; break;}
+                v = Math.min(v, alphabeta(g,depth-1,alpha,beta,MAXER,due));
                 beta = Math.min(beta,v);
                 if (beta <= alpha){
                     break;
@@ -293,25 +307,26 @@ public class Player {
 
         }
 
-        HashInfo newHashInfo = new HashInfo();
-        if (nextStates.isEmpty()) {
-            newHashInfo.setBestGameState(null);
-        } else {
-            newHashInfo.setBestGameState(nextStates.firstElement());
-        }
-        if (v<=oldAlpha) newHashInfo.setBeta(v);
-        else if (v > oldAlpha && v < oldBeta) {
-            newHashInfo.setAlpha(v);
-            newHashInfo.setBeta(v);
-        } else if (v >= oldBeta) {
-            newHashInfo.setAlpha(v);
-        }
-        newHashInfo.setDepth(depth);
-        newHashInfo.setEvalaution(v);
+        if (depth > 0 && !nextStates.isEmpty()){
+            HashInfo newHashInfo = new HashInfo();
+            if (nextStates.isEmpty()) {
+                newHashInfo.setBestGameState(null);
+            } else {
+                newHashInfo.setBestGameState(nextStates.firstElement());
+            }
+            if (v<=oldAlpha) newHashInfo.setBeta(v);
+            else if (v > oldAlpha && v < oldBeta) {
+                newHashInfo.setAlpha(v);
+                newHashInfo.setBeta(v);
+            } else if (v >= oldBeta) {
+                newHashInfo.setAlpha(v);
+            }
+            newHashInfo.setDepth(depth);
+            newHashInfo.setEvalaution(v);
 
-        STATE_INFO.remove(z);
-        STATE_INFO.put(z,newHashInfo);
-
+            STATE_INFO.remove(z);
+            STATE_INFO.put(z,newHashInfo);
+        }
         return v;
 
     }
@@ -319,24 +334,39 @@ public class Player {
     public int evaluationFunction(GameState gameState){
 
         int result = 0;
-        if (MAXER == Constants.CELL_RED && gameState.isWhiteWin()){
-            return -100000;
+        int numberOfPieces = 0;
+        if (MAXER == Constants.CELL_WHITE && gameState.isWhiteWin()){
+            return 100000;
         } else if (MAXER == Constants.CELL_RED && gameState.isRedWin()) {
             return 100000;
-        } else if (gameState.isEOG()) {
+        } else if (gameState.isEOG() && !gameState.isRedWin() && !gameState.isWhiteWin()) {
             return 0;
+        } else if (MINER == Constants.CELL_WHITE && gameState.isWhiteWin()){
+            return -100000;
+        } else if (MINER == Constants.CELL_RED && gameState.isRedWin()) {
+            return -100000;
         }
+
         for (int r = 0; r < BOARD_SIZE; r++){
             for (int c = 0; c < BOARD_SIZE/2; c++){
                 int cOffset = (r+1)%2;
                 int piece = gameState.get(r,cOffset+2*c);
-                int pieceVal = (piece & Constants.CELL_KING) == 4 ? KING_VALUE: MAN_VALUE;
+                int pieceVal = (piece & Constants.CELL_KING) != 0 ? KING_VALUE: MAN_VALUE;
+                numberOfPieces++;
                 if ((piece & MINER) != 0){
                     //result--;
-                    result -= pieceVal+(BOARD_SIZE-r-1);
+                    if (pieceVal==KING_VALUE){
+                        result -= pieceVal+checkIfProtected(gameState,r,cOffset+2*c,MINER);
+                    } else {
+                        result -= pieceVal + (BOARD_SIZE - r - 1) + checkIfProtected(gameState, r, cOffset + 2 * c, MINER);
+                    }
                 } else {
                     //result++;
-                    result += pieceVal+r+1+checkIfProtected(gameState,r,cOffset+2*c,MAXER);
+                    if (pieceVal == KING_VALUE){
+                        result += pieceVal+checkIfProtected(gameState,r,cOffset+2*c,MAXER);
+                    } else {
+                        result += pieceVal + r + 1 + checkIfProtected(gameState, r, cOffset + 2 * c, MAXER);
+                    }
                 }
 
             }
@@ -344,6 +374,35 @@ public class Player {
         return result;
 
     }
+
+    public int manhattan(int r1, int c1, int r2, int c2){
+        return Math.abs(r1-r2)+Math.abs(c1-c2);
+    }
+    /*
+    public int evaluationFunction(GameState gameState){
+        int result = 0;
+        for (int r = 0; r < BOARD_SIZE; r++){
+            for (int c = 0; c < BOARD_SIZE/2; c++){
+                int cOffset = (r+1)%2;
+                int piece = gameState.get(r,cOffset+2*c);
+                if (piece == Constants.CELL_INVALID || piece == Constants.CELL_EMPTY) continue;
+                for (int i = 0; i<CHECKERS_STATES;i++){
+                    int compPiece = gameState.get(i);
+                    if ((piece & compPiece) == 0 || (piece & compPiece) == Constants.CELL_KING){
+                        result += manhattan(r,c,GameState.cellToRow(i),GameState.cellToCol(i));
+                    }
+                }
+
+            }
+        }
+
+
+        return result;
+
+    }*/
+
+
+
 
     public int checkIfProtected(GameState state, int r, int c, int player){
         int result = 0;
@@ -364,34 +423,34 @@ public class Player {
     }
 
 
-    
+
     public static int[][] init() {
-    	int[][] newzobrist = new int[CHECKERS_STATES][DIFFERENT_PLAYER_TYPES];
-    	for(int i = 0; i<CHECKERS_STATES;i++) {
-    		for(int j = 0; j<DIFFERENT_PLAYER_TYPES;j++) {
-    			int randomNum = ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE);
-    			newzobrist[i][j] = randomNum;
-    		}
-    	}
-    	return newzobrist;
+        int[][] newzobrist = new int[CHECKERS_STATES][DIFFERENT_PLAYER_TYPES];
+        for(int i = 0; i<CHECKERS_STATES;i++) {
+            for(int j = 0; j<DIFFERENT_PLAYER_TYPES;j++) {
+                int randomNum = ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE);
+                newzobrist[i][j] = randomNum;
+            }
+        }
+        return newzobrist;
     }
-    
+
     public int zhash(GameState state) {
-    	int val = 0;
-    	boolean king = false;
-    	for(int i = 0; i<CHECKERS_STATES; i++) {
-    		int p = 0;
-    		int piece = state.get(i);
-    		if(piece!=Constants.CELL_EMPTY && piece!=Constants.CELL_INVALID) {
-	    		if((piece & Constants.CELL_KING) == 4) king = true;
-	    		if(piece==Constants.CELL_WHITE) p = 0;
-	    		if(piece==Constants.CELL_RED) p = 1;
-	    		if(piece == 0 && king == true) p = 2;
-	    		if(piece == 1 && king == true) p = 3;
-	    		val ^= zobrist[i][p];
-    		}  
-		}
-    	return val;
+        int val = 0;
+        boolean king = false;
+        for(int i = 0; i<CHECKERS_STATES; i++) {
+            int p = 0;
+            int piece = state.get(i);
+            if(piece!=Constants.CELL_EMPTY && piece!=Constants.CELL_INVALID) {
+                if((piece & Constants.CELL_KING) == 4) king = true;
+                if(piece==Constants.CELL_WHITE) p = 0;
+                if(piece==Constants.CELL_RED) p = 1;
+                if(piece == 0 && king == true) p = 2;
+                if(piece == 1 && king == true) p = 3;
+                val ^= zobrist[i][p];
+            }
+        }
+        return val;
     }
-    
+
 }
