@@ -17,9 +17,9 @@ public class Player {
     private int MAXER = Constants.CELL_WHITE;
     private int MINER = Constants.CELL_RED;
     private final long TIME_LIMIT = 50000000;
-    private final int MAX_DEPTH = 15;
+    private final int MAX_DEPTH = 12;
     private final int MAN_VALUE = 5;
-    private final int KING_VALUE = 50;
+    private final int KING_VALUE = 25;
     private final int BOARD_SIZE = 8; // 8 COLS X 8 ROWS
     private static int[][] zobrist = init();
     private static final int CHECKERS_STATES = 32;
@@ -396,7 +396,11 @@ public class Player {
 
     public int evaluationFunction(GameState gameState){
 
-        int result = 0;
+        int resultMax = 0;
+        int resultMin = 0;
+        int MaxPieces = 1;
+        int MinPieces = 1;
+
         int numberOfPieces = 0;
         if (MAXER == Constants.CELL_WHITE && gameState.isWhiteWin()){
             return 100000;
@@ -418,23 +422,25 @@ public class Player {
                 numberOfPieces++;
                 if ((piece & MINER) != 0){
                     //result--;
+                    MinPieces++;
                     if (pieceVal==KING_VALUE){
-                        result -= pieceVal+checkIfProtected(gameState,r,cOffset+2*c,MINER);
+                        resultMin -= pieceVal+checkIfProtected(gameState,r,cOffset+2*c,MINER);
                     } else {
-                        result -= pieceVal + (BOARD_SIZE - r - 1) + checkIfProtected(gameState, r, cOffset + 2 * c, MINER);
+                        resultMin -= pieceVal + (BOARD_SIZE - r - 1) + checkIfProtected(gameState, r, cOffset + 2 * c, MINER);
                     }
                 } else {
+                    MaxPieces++;
                     //result++;
                     if (pieceVal == KING_VALUE){
-                        result += pieceVal+checkIfProtected(gameState,r,cOffset+2*c,MAXER);
+                        resultMax += pieceVal+checkIfProtected(gameState,r,cOffset+2*c,MAXER);
                     } else {
-                        result += pieceVal + r + 1 + checkIfProtected(gameState, r, cOffset + 2 * c, MAXER);
+                        resultMax += pieceVal + r + 1 + checkIfProtected(gameState, r, cOffset + 2 * c, MAXER);
                     }
                 }
 
             }
         }
-        return result;
+        return resultMax/MaxPieces+resultMin/MinPieces;
 
     }
 
